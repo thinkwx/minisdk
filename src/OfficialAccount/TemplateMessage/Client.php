@@ -142,7 +142,11 @@ class Client extends BaseClient
 
         $this->restoreMessage();
 
-        return $this->httpPostJson(static::API_SEND, $params);
+        $path = static::API_SEND;
+        if ($this->app['config']->has('http.base_uri') && strpos($this->app['config']->get('http.base_uri'), 'api.q.qq.com') !== false) {
+            $path = 'api/json/template/send';
+        }
+        return $this->httpPostJson($path, $params);
     }
 
     /**
