@@ -26,6 +26,7 @@ use EasyWeChat\Kernel\ServiceContainer;
  * @property \EasyWeChat\OfficialAccount\Server\Guard           $server
  * @property \EasyWeChat\MiniProgram\Encryptor                  $encryptor
  * @property \EasyWeChat\MiniProgram\TemplateMessage\Client     $template_message
+ * @property \EasyWeChat\MiniProgram\SubscribeMessage\Client    $subscribe_message
  * @property \EasyWeChat\OfficialAccount\CustomerService\Client $customer_service
  * @property \EasyWeChat\MiniProgram\Plugin\Client              $plugin
  * @property \EasyWeChat\MiniProgram\Plugin\DevClient           $plugin_dev
@@ -50,6 +51,7 @@ class Application extends ServiceContainer
         AppCode\ServiceProvider::class,
         Server\ServiceProvider::class,
         TemplateMessage\ServiceProvider::class,
+        SubscribeMessage\ServiceProvider::class,
         CustomerService\ServiceProvider::class,
         UniformMessage\ServiceProvider::class,
         ActivityMessage\ServiceProvider::class,
