@@ -11,17 +11,17 @@
 
 namespace EasyWeChat\MiniProgram\SubscribeMessage;
 
-use EasyWeChat\OfficialAccount\TemplateMessage\Client as BaseClient;
+use EasyWeChat\Kernel\BaseClient;
+use EasyWeChat\Kernel\Exceptions\InvalidArgumentException;
+use ReflectionClass;
 
 /**
  * Class Client.
  *
- * @author idoubi <765532665@qq.com>
+ * @author hugo <rabbitzhang52@gmail.com>
  */
 class Client extends BaseClient
 {
-    const API_SEND = 'cgi-bin/message/subscribe/send';
-
     /**
      * {@inheritdoc}.
      */
@@ -38,75 +38,171 @@ class Client extends BaseClient
     protected $required = ['touser', 'template_id', 'data'];
 
     /**
-     * @param int $offset
-     * @param int $count
+     * Send a template message.
+     *
+     * @param array $data
      *
      * @return \Psr\Http\Message\ResponseInterface|\EasyWeChat\Kernel\Support\Collection|array|object|string
+     *
+     * @throws \EasyWeChat\Kernel\Exceptions\InvalidArgumentException
+     * @throws \EasyWeChat\Kernel\Exceptions\InvalidConfigException
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    public function send(array $data = [])
+    {
+        $params = $this->formatMessage($data);
+
+        $this->restoreMessage();
+
+        return $this->httpPostJson('cgi-bin/message/subscribe/send', $params);
+    }
+
+    /**
+     * @param array $data
+     *
+     * @return array
+     *
+     * @throws \EasyWeChat\Kernel\Exceptions\InvalidArgumentException
+     */
+    protected function formatMessage(array $data = [])
+    {
+        $params = array_merge($this->message, $data);
+
+        foreach ($params as $key => $value) {
+            if (in_array($key, $this->required, true) && empty($value) && empty($this->message[$key])) {
+                throw new InvalidArgumentException(sprintf('Attribute "%s" can not be empty!', $key));
+            }
+
+            $params[$key] = empty($value) ? $this->message[$key] : $value;
+        }
+
+        foreach ($params['data'] as $key => $value) {
+            if (is_array($value)) {
+                if (isset($value['value'])) {
+                    $params['data'][$key] = ['value' => $value['value']];
+
+                    continue;
+                }
+
+                if (count($value) >= 1) {
+                    $value = [
+                        'value' => $value[0],
+                        //                        'color' => $value[1],// color unsupported
+                    ];
+                }
+            } else {
+                $value = [
+                    'value' => strval($value),
+                ];
+            }
+
+            $params['data'][$key] = $value;
+        }
+
+        return $params;
+    }
+
+    /**
+     * Restore message.
+     */
+    protected function restoreMessage()
+    {
+        $this->message = (new ReflectionClass(static::class))->getDefaultProperties()['message'];
+    }
+
+    /**
+     * Combine templates and add them to your personal template library under your account.
+     *
+     * @param string      $tid
+     * @param array       $kidList
+     * @param string|null $sceneDesc
+     *
+     * @return array|\EasyWeChat\Kernel\Support\Collection|object|\Psr\Http\Message\ResponseInterface|string
      *
      * @throws \EasyWeChat\Kernel\Exceptions\InvalidConfigException
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    public function list(int $offset, int $count)
+    public function addTemplate(string $tid, array $kidList, string $sceneDesc = null)
     {
-        return $this->httpPostJson('cgi-bin/wxopen/template/library/list', compact('offset', 'count'));
+        $sceneDesc = $sceneDesc ?? '';
+        $data = \compact('tid', 'kidList', 'sceneDesc');
+
+        return $this->httpPost('wxaapi/newtmpl/addtemplate', $data);
     }
 
     /**
+     * Delete personal template under account.
+     *
      * @param string $id
      *
-     * @return \Psr\Http\Message\ResponseInterface|\EasyWeChat\Kernel\Support\Collection|array|object|string
+     * @return array|\EasyWeChat\Kernel\Support\Collection|object|\Psr\Http\Message\ResponseInterface|string
      *
      * @throws \EasyWeChat\Kernel\Exceptions\InvalidConfigException
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    public function get(string $id)
+    public function deleteTemplate(string $id)
     {
-        return $this->httpPostJson('cgi-bin/wxopen/template/library/get', compact('id'));
+        return $this->httpPost('wxaapi/newtmpl/deltemplate', ['priTmplId' => $id]);
     }
 
     /**
-     * @param string $id
-     * @param array  $keyword
+     * Get keyword list under template title.
      *
-     * @return \Psr\Http\Message\ResponseInterface|\EasyWeChat\Kernel\Support\Collection|array|object|string
+     * @param string $tid
+     *
+     * @return array|\EasyWeChat\Kernel\Support\Collection|object|\Psr\Http\Message\ResponseInterface|string
      *
      * @throws \EasyWeChat\Kernel\Exceptions\InvalidConfigException
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    public function add(string $id, array $keyword)
+    public function getTemplateKeywords(string $tid)
     {
-        return $this->httpPostJson('cgi-bin/wxopen/template/add', [
-            'id' => $id,
-            'keyword_id_list' => $keyword,
-        ]);
+        return $this->httpGet('wxaapi/newtmpl/getpubtemplatekeywords', compact('tid'));
     }
 
     /**
-     * @param string $templateId
+     * Get the title of the public template under the category to which the account belongs.
      *
-     * @return \Psr\Http\Message\ResponseInterface|\EasyWeChat\Kernel\Support\Collection|array|object|string
+     * @param array $ids
+     * @param int   $start
+     * @param int   $limit
+     *
+     * @return array|\EasyWeChat\Kernel\Support\Collection|object|\Psr\Http\Message\ResponseInterface|string
      *
      * @throws \EasyWeChat\Kernel\Exceptions\InvalidConfigException
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    public function delete(string $templateId)
+    public function getTemplateTitles(array $ids, int $start = 0, int $limit = 30)
     {
-        return $this->httpPostJson('cgi-bin/wxopen/template/del', [
-            'template_id' => $templateId,
-        ]);
+        $ids = \implode(',', $ids);
+        $query = \compact('ids', 'start', 'limit');
+
+        return $this->httpGet('wxaapi/newtmpl/getpubtemplatetitles', $query);
     }
 
     /**
-     * @param int $offset
-     * @param int $count
+     * Get list of personal templates under the current account.
      *
-     * @return \Psr\Http\Message\ResponseInterface|\EasyWeChat\Kernel\Support\Collection|array|object|string
+     * @return array|\EasyWeChat\Kernel\Support\Collection|object|\Psr\Http\Message\ResponseInterface|string
      *
      * @throws \EasyWeChat\Kernel\Exceptions\InvalidConfigException
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    public function getTemplates(int $offset, int $count)
+    public function getTemplates()
     {
-        return $this->httpPostJson('cgi-bin/wxopen/template/list', compact('offset', 'count'));
+        return $this->httpGet('wxaapi/newtmpl/gettemplate');
+    }
+
+    /**
+     * Get the category of the applet account.
+     *
+     * @return array|\EasyWeChat\Kernel\Support\Collection|object|\Psr\Http\Message\ResponseInterface|string
+     *
+     * @throws \EasyWeChat\Kernel\Exceptions\InvalidConfigException
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    public function getCategory()
+    {
+        return $this->httpGet('wxaapi/newtmpl/getcategory');
     }
 }
