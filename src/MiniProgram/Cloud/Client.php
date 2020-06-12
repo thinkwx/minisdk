@@ -18,40 +18,83 @@ use ReflectionClass;
 /**
  * Class Client.
  *
- * @author hugo <rabbitzhang52@gmail.com>
+ * @author idoubi <me@idoubi.cc>
  */
 class Client extends BaseClient
 {
 
     /**
-     * cloud database query
+     * invoke cloud function
      *
-     * @param string $env
-     * @param string $query
+     * @param array $data
      *
      * @return array|\EasyWeChat\Kernel\Support\Collection|object|\Psr\Http\Message\ResponseInterface|string
      *
      * @throws \EasyWeChat\Kernel\Exceptions\InvalidConfigException
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    public function dbQuery(string $env, string $query)
+    public function invoke(array $data)
     {
-        return $this->httpPost('tcb/databasequery', ['env' => $env, 'query' => $query]);
+        return $this->httpPostJson('tcb/invokecloudfunction', $data);
+    }
+
+    /**
+     * cloud database query
+     *
+     * @param array $data
+     *
+     * @return array|\EasyWeChat\Kernel\Support\Collection|object|\Psr\Http\Message\ResponseInterface|string
+     *
+     * @throws \EasyWeChat\Kernel\Exceptions\InvalidConfigException
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    public function dbQuery(array $data)
+    {
+        return $this->httpPostJson('tcb/databasequery', $data);
+    }
+
+    /**
+     * cloud database add
+     *
+     * @param array $data
+     *
+     * @return array|\EasyWeChat\Kernel\Support\Collection|object|\Psr\Http\Message\ResponseInterface|string
+     *
+     * @throws \EasyWeChat\Kernel\Exceptions\InvalidConfigException
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    public function dbAdd(array $data)
+    {
+        return $this->httpPostJson('tcb/databaseadd', $data);
     }
 
     /**
      * cloud database update
      *
-     * @param string $env
-     * @param string $query
+     * @param array $data
      *
      * @return array|\EasyWeChat\Kernel\Support\Collection|object|\Psr\Http\Message\ResponseInterface|string
      *
      * @throws \EasyWeChat\Kernel\Exceptions\InvalidConfigException
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    public function dbUpdate(string $env, string $query)
+    public function dbUpdate(array $data)
     {
-        return $this->httpPost('tcb/databaseupdate', ['env' => $env, 'query' => $query]);
+        return $this->httpPostJson('tcb/databaseupdate', $data);
+    }
+
+    /**
+     * cloud database delete
+     *
+     * @param array $data
+     *
+     * @return array|\EasyWeChat\Kernel\Support\Collection|object|\Psr\Http\Message\ResponseInterface|string
+     *
+     * @throws \EasyWeChat\Kernel\Exceptions\InvalidConfigException
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    public function dbDelete(array $data)
+    {
+        return $this->httpPostJson('tcb/databasedelete', $data);
     }
 }
