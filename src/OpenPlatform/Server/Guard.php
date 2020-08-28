@@ -16,6 +16,7 @@ use EasyWeChat\OpenPlatform\Server\Handlers\Authorized;
 use EasyWeChat\OpenPlatform\Server\Handlers\Unauthorized;
 use EasyWeChat\OpenPlatform\Server\Handlers\UpdateAuthorized;
 use EasyWeChat\OpenPlatform\Server\Handlers\VerifyTicketRefreshed;
+use EasyWeChat\OpenPlatform\Server\Handlers\ThirdFastregisterNotified;
 use Symfony\Component\HttpFoundation\Response;
 use function EasyWeChat\Kernel\data_get;
 
@@ -61,5 +62,6 @@ class Guard extends ServerGuard
         $this->on(self::EVENT_UNAUTHORIZED, Unauthorized::class);
         $this->on(self::EVENT_UPDATE_AUTHORIZED, UpdateAuthorized::class);
         $this->on(self::EVENT_COMPONENT_VERIFY_TICKET, VerifyTicketRefreshed::class);
+        $this->on(self::EVENT_THIRD_FAST_REGISTERED, ThirdFastregisterNotified::class);
     }
 }
